@@ -8,7 +8,7 @@ import android.preference.PreferenceManager;
 
 /**
  * A {@link PreferenceActivity} that presents a set of application settings.
- * <p>
+ * <p/>
  * See <a href="http://developer.android.com/design/patterns/settings.html">
  * Android Design: Settings</a> for design guidelines and the <a
  * href="http://developer.android.com/guide/topics/ui/settings.html">Settings
@@ -21,11 +21,12 @@ public class SettingsActivity extends PreferenceActivity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         // Add 'general' preferences, defined in the XML file
-        // TODO: Add preferences from XML
+        addPreferencesFromResource(R.xml.pref_general);
 
         // For all preferences, attach an OnPreferenceChangeListener so the UI summary can be
         // updated when the preference changes.
-        // TODO: Add preferences
+        bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_location_key)));
+        bindPreferenceSummaryToValue(findPreference(getString(R.string.pref_units_key)));
     }
 
     /**

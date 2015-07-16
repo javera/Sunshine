@@ -1,9 +1,11 @@
 package com.example.android.sunshine;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.text.format.Time;
 import android.util.Log;
@@ -29,7 +31,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -65,28 +66,35 @@ public class ForecastFragment extends Fragment {
         // Handle item selection
         switch (item.getItemId()) {
             case R.id.action_refresh:
-                final String PLACE_QUERY = "Chongqing,cn";
-                new FetchWeatherTask().execute(PLACE_QUERY);
+                refreshWeather();
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
         }
     }
 
+    /**
+     * Runs a fetchWeatherTask on the bg thread, using the location value from app settings
+     */
+    private void refreshWeather() {
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this.getActivity());
+        String locationPref = sharedPref.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default));
+
+        new FetchWeatherTask().execute(locationPref);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        refreshWeather();
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
 
-        // dummy data for the ListView.
-        String[] forecasts = {"Mon - Sunny - 32/28",
-                "Tue - Partly Cloudy - 32/26",
-                "Wed - Rainy - 24/16",
-                "Thu - Thunderstorms - 20/14",
-                "Fri - Rainy - 22/19",
-                "Sat - Foggy - 26/24",
-                "Sun - Partly Cloudy - 29/26"};
-
-        List<String> forecastList = new ArrayList<>(Arrays.asList(forecasts));
+        List<String> forecastList = new ArrayList<>();
 
         // bind the sample data with the adapter
         mListAdapter = new ArrayAdapter<>(getActivity(),
@@ -106,7 +114,7 @@ public class ForecastFragment extends Fragment {
                 Intent detailViewIntent = new Intent(getActivity(), DetailActivity.class);
                 detailViewIntent.putExtra(Intent.EXTRA_TEXT, mListAdapter.getItem(position));
                 startActivity(detailViewIntent);
-                //Toast.makeText(getActivity(), mListAdapter.getItem(position), Toast.LENGTH_SHORT).show();
+
             }
         });
         return fragmentView;
@@ -224,7 +232,7 @@ public class ForecastFragment extends Fragment {
 
         @Override
         protected void onPostExecute(String[] forecasts) {
-            if (forecasts.length > 0) {
+            if (forecasts != null && forecasts.length > 0) {
                 mListAdapter.clear();
                 for (String forecast : forecasts) {
                     mListAdapter.add(forecast);
@@ -247,6 +255,7 @@ public class ForecastFragment extends Fragment {
          * Prepare the weather high/lows for presentation.
          */
         private String formatHighLows(double high, double low) {
+
             // For presentation, assume the user doesn't care about tenths of a degree.
             long roundedHigh = Math.round(high);
             long roundedLow = Math.round(low);
@@ -255,10 +264,21 @@ public class ForecastFragment extends Fragment {
             return highLowStr;
         }
 
+        private boolean isDisplayUnitImperial() {
+            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String unitsPref = sharedPref.getString(getString(R.string.pref_units_key),
+                    getString(R.string.pref_units_default));
+            if (unitsPref.contentEquals("Imperial"))
+            {
+                return true;
+            }
+            return false;
+        }
+
         /**
          * Take the String representing the complete forecast in JSON Format and
          * pull out the data we need to construct the Strings needed for the wireframes.
-         * <p/>
+         * <p>
          * Fortunately parsing is easy:  constructor takes the JSON string and converts it
          * into an Object hierarchy for us.
          */
@@ -321,11 +341,22 @@ public class ForecastFragment extends Fragment {
                 double high = temperatureObject.getDouble(OWM_MAX);
                 double low = temperatureObject.getDouble(OWM_MIN);
 
+                // since we're getting temp in metric units, check if user wants temp in imperial units, then convert
+                if (isDisplayUnitImperial())
+                {
+                    high = getImperialFromMetric(high);
+                    low = getImperialFromMetric(low);
+                }
+
                 highAndLow = formatHighLows(high, low);
                 resultStrs[i] = day + " - " + description + " - " + highAndLow;
             }
             return resultStrs;
 
+        }
+
+        private double getImperialFromMetric(double metricValue) {
+            return  ((metricValue * 9) / 5) + 32;
         }
     }
 }
