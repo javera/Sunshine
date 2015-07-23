@@ -37,8 +37,8 @@ public class DetailActivity extends AppCompatActivity {
                 startActivity(settingsIntent);
                 return true;
         }
-
         return super.onOptionsItemSelected(item);
+
     }
 
 
