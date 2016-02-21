@@ -1,10 +1,8 @@
 package com.example.android.sunshine;
 
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -40,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
             case R.id.action_show_on_map:
 
 
-
                 showMap();
 
                 //
@@ -51,15 +48,13 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void showMap() {
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        String place = sharedPref.getString(getString(R.string.pref_location_key),
-                getString(R.string.pref_location_default));
+        String location = Utility.getPreferredLocation(this);
 
         final String MAP_INTENT_PREFIX = "geo:0,0";
         final String PARAM_QUERY = "q";
 
         Uri.Builder uriBuilder = Uri.parse(MAP_INTENT_PREFIX).buildUpon()
-                .appendQueryParameter(PARAM_QUERY, place);
+                .appendQueryParameter(PARAM_QUERY, location);
 
         Intent intent = new Intent(Intent.ACTION_VIEW);
         intent.setData(uriBuilder.build());
